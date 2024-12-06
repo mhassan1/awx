@@ -40,13 +40,20 @@ class HelpfulArgumentParser(ArgumentParser):
         self._print_message('\n')
         self.exit(2, '%s: %s\n' % (self.prog, message))
 
-    def _parse_known_args(self, args, ns):
+    def _parse_known_args(self, args, ns, intermixed=False):
         for arg in ('-h', '--help'):
             # the -h argument is extraneous; if you leave it off,
             # awx-cli will just print usage info
             if arg in args:
                 args.remove(arg)
-        return super(HelpfulArgumentParser, self)._parse_known_args(args, ns)
+
+        super__parse_known_args = super(HelpfulArgumentParser, self)._parse_known_args
+        # python <=3.12.7 and ==3.13.0 have an arg count of 3
+        # python ~=3.12.8 and >=3.13.1 have an arg count of 4
+        # https://github.com/python/cpython/pull/125356/files#diff-205ef24c9374465bf35c359abce9211d3aa113e986a1e3d41569eb29d07df479R1967
+        if super__parse_known_args.__code__.co_argcount == 3:
+            return super__parse_known_args(args, ns)
+        return super__parse_known_args(args, ns, intermixed)
 
 
 def color_enabled():
